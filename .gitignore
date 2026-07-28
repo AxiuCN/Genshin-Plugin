@@ -1,0 +1,15 @@
+# 依赖
+node_modules/
+
+# 运行时配置
+config/config.yaml
+
+# 用户数据
+data/
+
+# 日志
+log/
+
+# Claude Code 工作区
+.claude/
+CLAUDE.md
