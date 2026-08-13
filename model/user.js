@@ -319,7 +319,7 @@ export default class User extends base {
       await this.e.runtime.render("genshin", "html/user/uid-list", { uids }, { retType: "base64" }),
       segment.button(
         [
-          { text: "扫码登陆", input: "#扫码登陆" },
+          { text: "扫码登录", input: "#扫码登录" },
           { text: "切换UID", input: "#uid" },
           { text: "删除UID", input: "#删除uid" },
         ],
@@ -593,7 +593,7 @@ export default class User extends base {
       [
         cks.join("\n----\n"),
         segment.button([
-          { text: "扫码登陆", input: "#扫码登陆" },
+          { text: "扫码登录", input: "#扫码登录" },
           { text: "切换UID", input: "#uid" },
           { text: "删除UID", input: "#删除uid" },
         ]),

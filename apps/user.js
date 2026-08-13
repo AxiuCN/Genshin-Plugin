@@ -159,7 +159,7 @@ export class user extends plugin {
 
   /** ck帮助 */
   async ckHelp() {
-    await this.reply("请发送 #扫码登陆")
+    await this.reply("请发送 #扫码登录")
   }
 
   /** 绑定ck */

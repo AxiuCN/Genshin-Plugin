@@ -111,7 +111,7 @@ export default class MysInfo {
       uid = atUser.getUid(game)
       if (uid) return String(uid)
       if (e.noTips !== true) {
-        e.reply(["请发送 #扫码登陆", segment.button([{ text: "扫码登陆", input: "#扫码登陆" }])], false, {
+        e.reply(["请发送 #扫码登录", segment.button([{ text: "扫码登录", input: "#扫码登录" }])], false, {
           at,
         })
       }
@@ -135,7 +135,7 @@ export default class MysInfo {
     }
 
     if (e.noTips !== true) {
-      e.reply(["请发送 #扫码登陆", segment.button([{ text: "扫码登陆", input: "#扫码登陆" }])], false, {
+      e.reply(["请发送 #扫码登录", segment.button([{ text: "扫码登录", input: "#扫码登录" }])], false, {
         at: at || true,
       })
     }
@@ -342,7 +342,7 @@ export default class MysInfo {
 
     if (!this.uid) {
       this.e.reply(
-        ["请发送 #扫码登陆", segment.button([{ text: "扫码登陆", input: "#扫码登陆" }])],
+        ["请发送 #扫码登录", segment.button([{ text: "扫码登录", input: "#扫码登录" }])],
         false,
         { at: true },
       )
