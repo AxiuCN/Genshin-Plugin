@@ -159,8 +159,7 @@ export class user extends plugin {
 
   /** ck帮助 */
   async ckHelp() {
-    let set = gsCfg.getConfig("mys", "set")
-    await this.reply(`Cookie绑定配置教程：${set.cookieDoc}\n获取Cookie后【私聊发送】进行绑定`)
+    await this.reply("请发送 #扫码登陆")
   }
 
   /** 绑定ck */
