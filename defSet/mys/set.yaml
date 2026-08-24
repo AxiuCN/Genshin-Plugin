@@ -3,6 +3,9 @@ allowUseCookie: 1
 # 默认cookie帮助文档链接地址
 cookieDoc: https://docs.qq.com/doc/DUWNVQVFTU3liTVlO
 
+# stoken 数据目录（CK自动刷新：CK失效时用stoken换取新cookie，默认指向 Axiu-Plugin，可改为任意插件的 stoken 目录）
+stokenPath: plugins/Axiu-Plugin/data/stoken/
+
 
 # 别名设置权限 0-所有群员都可以添加 1-群管理员才能添加 2-主人才能添加
 abbrSetAuth: 0

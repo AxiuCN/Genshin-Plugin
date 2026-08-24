@@ -21,7 +21,10 @@ export default class blueprint extends base {
       return false
     }
 
-    this.mysApi = new MysApi(ck.uid, ck.ck, { log: true })
+    this.mysApi = new MysApi(ck.uid, ck.ck, {
+      log: true,
+      ctx: { userId: this.userId, groupId: this.e?.group_id },
+    })
 
     /** 获取角色数据 */
     let blueprint = await this.mysApi.getData("blueprint", {

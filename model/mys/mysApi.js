@@ -2,6 +2,7 @@ import md5 from "md5"
 import fetch from "node-fetch"
 import cfg from "../../../../lib/config/config.js"
 import ApiTool from "./apiTool.js"
+import { tryRefreshCk } from "./ckRefresh.js"
 
 const game_region = {
   gs: ["cn_gf01", "cn_qd01", "os_usa", "os_euro", "os_asia", "os_cht"],
@@ -40,6 +41,8 @@ export default class MysApi {
       log: true,
       ...option,
     }
+    /** 触发查询的上下文（CK自动刷新通知用） */
+    this.ctx = option.ctx || null
   }
 
   /* eslint-disable quotes */
@@ -162,7 +165,8 @@ export default class MysApi {
 
     if (cached) this.cache(res, cacheKey)
 
-    return res
+    /** CK 失效自动刷新（自 Axiu-Plugin ckAutoRefresh 迁移，10001+login 时用 stoken 换新 cookie 重试） */
+    return await tryRefreshCk(this, type, data, cached, res)
   }
 
   getHeaders(query = "", body = "") {

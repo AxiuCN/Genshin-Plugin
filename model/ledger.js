@@ -242,7 +242,12 @@ export default class Ledger extends base {
   async ysLedger(ck, month, isTask) {
     let ledgerInfo = {}
     if (isTask) {
-      let mysApi = new MysApi(ck.uid, ck.ck, { log: false }, this.e?.isSr)
+      let mysApi = new MysApi(
+        ck.uid,
+        ck.ck,
+        { log: false, ctx: { userId: this.userId, groupId: this.e?.group_id } },
+        this.e?.isSr,
+      )
       ledgerInfo = await mysApi.getData("ys_ledger", { month })
       ledgerInfo = await new MysInfo(this.e).checkCode(
         ledgerInfo,

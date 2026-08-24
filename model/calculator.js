@@ -24,7 +24,10 @@ export default class Calculator extends base {
       return false
     }
 
-    this.mysApi = new MysApi(uid, ck.ck, { log: true })
+    this.mysApi = new MysApi(uid, ck.ck, {
+      log: true,
+      ctx: { userId: this.userId, groupId: this.e?.group_id },
+    })
 
     let device_fp = await MysInfo.get(this.e, "getFp")
     this.headers = {

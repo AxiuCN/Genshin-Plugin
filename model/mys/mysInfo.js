@@ -202,6 +202,8 @@ export default class MysInfo {
     let user = e.user?.getMysUser()
     option.device = user.device
     option.game = e?.game || (e?.isSr ? "sr" : "gs")
+    /** CK自动刷新通知用：触发查询的用户与群 */
+    option.ctx = { userId: mysInfo.userId, groupId: e?.group_id }
     let mysApi = new MysApi(mysInfo.uid, mysInfo.ckInfo.ck, option)
 
     let res
@@ -497,8 +499,8 @@ export default class MysInfo {
 
     if (type === "character" && res.data?.list) res.data.avatars = res.data?.list
 
-    // 添加请求记录
-    if (!isTask) await this.ckUser.addQueryUid(this.uid)
+    // 添加请求记录（公共CK等场景 ckUser 可能为 null，跳过避免崩溃）
+    if (!isTask && this.ckUser) await this.ckUser.addQueryUid(this.uid)
     return res
   }
 
