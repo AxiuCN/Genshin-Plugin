@@ -161,12 +161,13 @@ async function bbsGetCookie(stoken) {
 }
 
 /**
- * 通知用户（优先群内 @，兜底私聊）
+ * 通知用户（优先群内 @；失败类通知禁用私聊兜底，防止风控）
  * @param {string} userId 绑定 QQ
  * @param {string} message 通知内容
  * @param {{userId: any, groupId: any} | null} ctx 触发查询的上下文
+ * @param {{private?: boolean}} option 通知选项，private:false 时无群上下文/群内@失败则跳过（不私聊）
  */
-async function notifyUser(userId, message, ctx) {
+async function notifyUser(userId, message, ctx, option = {}) {
   const uid = String(userId)
   // 群内 @：绑定者即查询者且触发查询处于群聊时
   if (uid && ctx?.groupId && String(ctx.userId) === uid) {
@@ -177,6 +178,8 @@ async function notifyUser(userId, message, ctx) {
       logger.debug("[CK自动刷新] 群内@通知失败:", err?.message)
     }
   }
+  // 失败类通知禁止私聊（防风控），无群上下文或@失败时跳过
+  if (option.private === false) return
   // 兜底：私聊
   try {
     await Bot.pickFriend(userId).sendMsg(message)
@@ -203,7 +206,7 @@ async function doRefreshCk(ltuid, found, ctx) {
       `[CK自动刷新] 刷新失败 ltuid:${ltuid}:`,
       refreshRes?.message || refreshRes?.retcode,
     )
-    await notifyUser(found.userId, "sk已失效，请重新扫码登陆", ctx)
+    await notifyUser(found.userId, "sk已失效，请重新扫码登陆", ctx, { private: false })
     return null
   }
 
@@ -223,7 +226,7 @@ async function doRefreshCk(ltuid, found, ctx) {
     logger.info(`[CK自动刷新] 绑定成功 ltuid:${found.stoken.stuid}`)
   } catch (err) {
     logger.error(`[CK自动刷新] 绑定失败: ${err.message}`)
-    await notifyUser(found.userId, "sk已失效，请重新扫码登陆", ctx)
+    await notifyUser(found.userId, "sk已失效，请重新扫码登陆", ctx, { private: false })
     return null
   }
 
