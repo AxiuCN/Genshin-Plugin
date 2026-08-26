@@ -18,21 +18,7 @@ git clone --depth=1 https://github.com/AxiuCN/Genshin-Plugin.git ./plugins/gensh
 
 ## 同步上游更新
 
-本仓库通过 `git subtree` 与上游保持同步，你可以在本地合并上游的最新更改，然后推送到本仓库：
-
-```bash
-# 添加上游远程（仅首次）
-git remote add upstream https://github.com/yoimiya-kokomi/Miao-Yunzai.git
-
-# 拉取上游最新代码
-git fetch upstream
-
-# 将上游 master 分支中 plugins/genshin 的更新合并到当前分支
-git merge -s recursive -Xsubtree=plugins/genshin upstream/master
-
-# 推送
-git push origin master
-```
+本插件是 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) `plugins/genshin` 的自有 fork（含自定义改动）。上游更新通过 M 盘仓库中转三方合并同步（先 merge 吸收本仓库提交、再 merge 官方增量、最后 `git subtree push` 推送），具体流程见仓库内 `CLAUDE.md`「同步上游」。普通使用无需关注。
 
 ## 功能
 
