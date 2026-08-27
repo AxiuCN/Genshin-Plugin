@@ -4,11 +4,15 @@
  *    1. 从 cookie 中提取 ltuid
  *    2. 遍历 stoken 目录下的 YAML，匹配 stuid === ltuid
  *    3. 用匹配到的 stoken 调 passport bbsGetCookie 获取新 cookie_token
- *    4. 绑定到 genshin CK 系统（user.js 的 bing 流程）
+ *    4. 更新账号级 MysUser 的 ck 数据（仅写库，不修改 QQ↔账号 归属）
  *    5. 用新 cookie 重试原请求
  *
- *  成功 → 通知 "先前ck已失效，米游社ck自动刷新成功"
- *  失败 → 通知 "sk已失效，请重新扫码登陆" → 返回原始错误（走 checkCode 原 delCk 逻辑）
+ *  成功 → 通知触发查询者 "先前ck已失效，米游社ck自动刷新成功"
+ *  失败 → 通知触发查询者 "sk已失效，请重新扫码登陆" → 返回原始错误（走 checkCode 原 delCk 逻辑）
+ *
+ *  说明：刷新只更新该账号（stuid）的 ck 数据，**不做 bing/归属绑定**——
+ *  绑定关系（QQ↔ltuid）保持不变，避免把账号写进与查询无关的用户名下
+ *  （历史 bug：刷新时 bing 到 stoken 条目 userId 会造成"绑定上别人的账号"）。
  *
  *  stoken 数据目录通过配置 mys.set.stokenPath 指定（默认 Axiu-Plugin），
  *  可指向任意插件的 stoken 目录。
@@ -70,22 +74,30 @@ async function getStokenDir() {
 
 /**
  * 遍历所有 stoken YAML 文件，查找 stuid 匹配 ltuid 的记录
+ * 同一 stuid 出现多条目时（数据异常）仅告警，仍返回首个（stoken 为账号级凭证，任意条目可刷新）
  * @param {string} ltuid 米游社通行证 ID
- * @returns {Promise<{userId: string, stoken: object} | null>}
+ * @returns {Promise<{stoken: object} | null>}
  */
 async function findStokenByLtuid(ltuid) {
   const dir = await getStokenDir()
   try {
     if (!fs.existsSync(dir)) return null
     const files = fs.readdirSync(dir).filter(file => file.endsWith(".yaml"))
+    let first = null
+    let count = 0
     for (const file of files) {
       const data = YAML.parse(fs.readFileSync(`${dir}${file}`, "utf8")) || {}
       for (const st of Object.values(data)) {
         if (st && String(st.stuid) === String(ltuid)) {
-          return { userId: String(st.userId ?? ""), stoken: st }
+          count++
+          if (!first) first = { stoken: st }
         }
       }
     }
+    if (count > 1) {
+      logger.warn(`[CK自动刷新] stuid:${ltuid} 存在多个stoken条目（${count}处），请检查stoken数据归属`)
+    }
+    return first
   } catch (err) {
     logger.error("[CK自动刷新] 搜索stoken失败:", err)
   }
@@ -162,15 +174,19 @@ async function bbsGetCookie(stoken) {
 
 /**
  * 通知用户（优先群内 @；失败类通知禁用私聊兜底，防止风控）
- * @param {string} userId 绑定 QQ
+ * @param {string|undefined} userId 通知对象（触发查询者 QQ；无效则跳过）
  * @param {string} message 通知内容
  * @param {{userId: any, groupId: any} | null} ctx 触发查询的上下文
  * @param {{private?: boolean}} option 通知选项，private:false 时无群上下文/群内@失败则跳过（不私聊）
  */
 async function notifyUser(userId, message, ctx, option = {}) {
+  if (!userId) {
+    logger.warn("[CK自动刷新] 无通知对象（缺少触发者上下文），跳过通知")
+    return
+  }
   const uid = String(userId)
-  // 群内 @：绑定者即查询者且触发查询处于群聊时
-  if (uid && ctx?.groupId && String(ctx.userId) === uid) {
+  // 群内 @：触发查询处于群聊时（通知对象即触发者）
+  if (ctx?.groupId) {
     try {
       await Bot.pickGroup(ctx.groupId).sendMsg([segment.at(uid), " ", message])
       return
@@ -190,13 +206,15 @@ async function notifyUser(userId, message, ctx, option = {}) {
 
 /**
  * 执行 CK 刷新（实际逻辑，由互斥锁保护）
- * @param {string} ltuid
- * @param {{userId: string, stoken: object}} found 匹配到的 stoken
- * @param {object|null} ctx
+ * 只更新账号级 ck 数据，不修改 QQ↔账号 归属（防止绑到与查询无关的用户）
+ * @param {string} ltuid 失效 cookie 的账号 ID
+ * @param {{stoken: object}} found 匹配到的 stoken
+ * @param {{userId: any, groupId: any} | null} ctx 触发查询的上下文（通知对象）
  * @returns {Promise<string|null>} 成功返回完整 cookie，失败返回 null
  */
 async function doRefreshCk(ltuid, found, ctx) {
   logger.info(`[CK自动刷新] 检测到ck失效 ltuid:${ltuid}，尝试从stoken刷新...`)
+  const notifyId = ctx?.userId
 
   // 调 bbsGetCookie 获取新 cookie_token
   const refreshRes = await bbsGetCookie(found.stoken)
@@ -206,7 +224,7 @@ async function doRefreshCk(ltuid, found, ctx) {
       `[CK自动刷新] 刷新失败 ltuid:${ltuid}:`,
       refreshRes?.message || refreshRes?.retcode,
     )
-    await notifyUser(found.userId, "sk已失效，请重新扫码登陆", ctx, { private: false })
+    await notifyUser(notifyId, "sk已失效，请重新扫码登陆", ctx, { private: false })
     return null
   }
 
@@ -214,23 +232,25 @@ async function doRefreshCk(ltuid, found, ctx) {
     `ltoken=${found.stoken.ltoken};ltuid=${found.stoken.stuid};` +
     `cookie_token=${refreshRes.data.cookie_token};account_id=${found.stoken.stuid};`
 
-  // 绑定到 genshin CK 系统（动态 import 避免与 user.js 循环依赖）
+  // 更新账号级 ck 数据（动态 import 避免循环依赖：MysUser → mysApi → ckRefresh）
+  // 不调用 user.js bing()：刷新不改变 QQ↔账号 归属，仅让所有引用该账号的查询/用户拿到新 ck
   try {
-    const UserCk = (await import("../user.js")).default
-    const fakeE = {
-      user_id: found.userId,
-      ck: fullCookie,
-      reply: () => {}, // no-op：bing() 内部会发送多条回复，统一用自己的通知
+    const MysUser = (await import("./MysUser.js")).default
+    const mys = await MysUser.create(found.stoken.stuid)
+    if (!mys) {
+      logger.warn(`[CK自动刷新] 无账号记录可更新 ltuid:${found.stoken.stuid}`)
+      return null
     }
-    await new UserCk(fakeE).bing()
-    logger.info(`[CK自动刷新] 绑定成功 ltuid:${found.stoken.stuid}`)
+    mys.setCkData({ ck: fullCookie })
+    await mys.save()
+    logger.info(`[CK自动刷新] ck刷新成功 ltuid:${found.stoken.stuid}`)
   } catch (err) {
-    logger.error(`[CK自动刷新] 绑定失败: ${err.message}`)
-    await notifyUser(found.userId, "sk已失效，请重新扫码登陆", ctx, { private: false })
+    logger.error(`[CK自动刷新] 账号ck写入失败: ${err.message}`)
+    await notifyUser(notifyId, "sk已失效，请重新扫码登陆", ctx, { private: false })
     return null
   }
 
-  await notifyUser(found.userId, "先前ck已失效，米游社ck自动刷新成功", ctx)
+  await notifyUser(notifyId, "先前ck已失效，米游社ck自动刷新成功", ctx)
   return fullCookie
 }
 
