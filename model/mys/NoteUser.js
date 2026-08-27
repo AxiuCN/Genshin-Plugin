@@ -308,9 +308,52 @@ export default class NoteUser extends BaseModel {
     }
   }
 
-  // 添加MysUser
+  /**
+   * 查找已绑定该 ltuid 的所有 QQ（归属校验用）
+   * @param {string} ltuid 米游社账号 ID
+   * @returns {Promise<string[]>} 持有该账号的 QQ 列表（可能为空）
+   */
+  static async findOwnersByLtuid(ltuid) {
+    let owners = []
+    try {
+      const dbs = await UserDB.findAll()
+      for (const db of dbs) {
+        if ((db.ltuids || "").split(",").includes(String(ltuid))) {
+          owners.push(String(db.id))
+        }
+      }
+    } catch (err) {
+      logger.error(`[NoteUser] 归属查询失败 ltuid:${ltuid}: ${err.message}`)
+    }
+    return owners
+  }
+
+  // 添加MysUser（含归属校验：账号已归属其他 QQ 时跳过挂载，防止双归属复发）
   async addMysUser(mysUser) {
-    this.mysUsers[mysUser.ltuid] = mysUser
+    let ltuid = mysUser?.ltuid
+    if (!ltuid) {
+      return this.save()
+    }
+
+    // 自身已持有 → 覆盖更新（同一 QQ 重复绑定属正常更新 ck）
+    if (this.mysUsers[ltuid]) {
+      this.mysUsers[ltuid] = mysUser
+      this._map = false
+      return this.save()
+    }
+
+    // 归属校验：该账号已属于其他 QQ 时，跳过挂载并告警（不阻断查询，仅防增殖）
+    let owners = await NoteUser.findOwnersByLtuid(ltuid)
+    let others = owners.filter(qq => qq != String(this.qq))
+    if (others.length > 0) {
+      logger.warn(
+        `[NoteUser] 账号 ltuid:${ltuid} 已归属 QQ:${others.join(",")}，跳过挂载到 QQ:${this.qq}` +
+          `（防双归属；如需转移请先在原 QQ #删除ck）`,
+      )
+      return
+    }
+
+    this.mysUsers[ltuid] = mysUser
     this._map = false
     MysUtil.eachGame(game => {
       let uid = mysUser.getUid(game)
