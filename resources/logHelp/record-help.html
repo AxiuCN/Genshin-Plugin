@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+  <link rel="shortcut icon" href="#"/>
+  <link rel="stylesheet" type="text/css" href="{{_res_path}}logHelp/record-help.css"/>
+</head>
+
+<body>
+<div class="help-card">
+  <span class="corner-tl"></span>
+  <span class="corner-br"></span>
+  <div class="title-box">
+    <h1>祈愿记录统计 · 帮助</h1>
+  </div>
+
+  <!-- 推荐方式 -->
+  <div class="block">
+    <div class="block-title"><span class="block-tag">推荐</span>自动拉取：无需链接</div>
+    <div class="block-text">
+      若已完成【#扫码登录】绑定，可直接使用以下命令自动获取抽卡记录：<br>
+      <span class="cmd">#更新抽卡记录</span>　米游社官方 API 增量更新（最近 12 个月，约 5 分钟频率限制）<br>
+      <span class="cmd">#更新小助手抽卡记录</span>　提瓦特小助手全历史导入（无需链接，自动换 authkey）<br>
+      <span class="cmd">#获取抽卡链接</span>　获取抽卡 URL（需私聊发送，供手动导入备用）
+    </div>
+  </div>
+  <div class="divider"></div>
+
+  <!-- 链接方式 -->
+  <div class="block">
+    <div class="block-title">链接导入（备用）</div>
+    <div class="block-text">
+      游戏内「祈愿记录」页面复制链接，私聊发送给机器人即可：<br>
+      <span class="cmd">#更新小助手抽卡记录 &lt;链接&gt;</span>　带链接导入全历史记录<br>
+      或直接发送抽卡链接，机器人自动解析。<br>
+      如何获取链接：无需手动获取——完成 <span class="cmd">#扫码登录</span> 绑定（Axiu-Plugin stoken 体系）后，用 <span class="cmd">#更新抽卡记录</span> 自动拉取即可
+    </div>
+  </div>
+  <div class="divider"></div>
+
+  <!-- 文件导入 -->
+  <div class="block">
+    <div class="block-title">文件导入</div>
+    <div class="block-text">
+      私聊发送 <span class="cmd">#原神导入记录json</span> 后再发送 xlsx / json 文件，或直接发送抽卡数据文件导入
+    </div>
+  </div>
+  <div class="divider"></div>
+
+  <!-- 查询命令 -->
+  <div class="block">
+    <div class="block-title">查询统计命令</div>
+    <div class="block-text">
+      <span class="cmd">#角色记录</span>　<span class="cmd">#武器记录</span>　<span class="cmd">#常驻记录</span>　<span class="cmd">#集录记录</span>　各池祈愿记录<br>
+      <span class="cmd">#角色统计</span>　<span class="cmd">#武器统计</span>　抽卡数据统计（五星平均抽数、角色抽数等）<br>
+      <span class="cmd">#导出记录</span>　导出 UIGF 标准记录文件
+    </div>
+  </div>
+  <div class="divider"></div>
+
+  <!-- 说明 -->
+  <div class="block">
+    <div class="block-title">其他说明</div>
+    <div class="block-text">
+      · 数据存在一小时左右延迟，最多可获取最近 <strong>12 个月</strong>的记录<br>
+      · 需更新数据时，重新拉取最新记录或重新发送链接即可<br>
+      · 链接发送失败：删除域名后再发送，或添加机器人为好友<br>
+      · 链接过长复制不完整：换个输入法即可解决
+    </div>
+  </div>
+</div>
+</body>
+</html>

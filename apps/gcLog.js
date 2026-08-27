@@ -35,10 +35,6 @@ export class gcLog extends plugin {
           fnc: "help",
         },
         {
-          reg: "^#?(安卓|苹果|电脑|pc|ios)帮助$",
-          fnc: "helpPort",
-        },
-        {
           reg: "^#?(原神|星铁)?(抽卡|抽奖|角色|武器|集录|常驻|up|新手|光锥)池*统计$",
           fnc: "logCount",
         },
@@ -50,7 +46,6 @@ export class gcLog extends plugin {
       ],
     })
 
-    this.androidUrl = "https://docs.qq.com/doc/DUWpYaXlvSklmVXlX"
     Object.defineProperty(this, "button", {
       get() {
         this.prefix = this.e?.isSr ? "*" : "#"
@@ -161,27 +156,10 @@ export class gcLog extends plugin {
     if (this.e.isGroup) this.reply("已收到文件，请撤回", false, { at: true })
   }
 
-  help() {
-    this.e.reply([
-      segment.image(`file://${_path}/resources/logHelp/记录帮助.png`),
-      segment.button([
-        { text: "电脑", callback: "#电脑帮助" },
-        { text: "安卓", callback: "#安卓帮助" },
-        { text: "苹果", callback: "#苹果帮助" },
-      ]),
+  async help() {
+    this.reply([
+      await this.renderImg("genshin", `logHelp/record-help`, {}, { retType: "base64" }),
     ])
-  }
-
-  helpPort() {
-    let msg = this.e.msg.replace(/#|帮助/g, "")
-
-    if (["电脑", "pc"].includes(msg)) {
-      this.e.reply(segment.image(`file://${_path}/resources/logHelp/记录帮助-电脑.png`))
-    } else if (["安卓"].includes(msg)) {
-      this.e.reply(`安卓抽卡记录获取教程：${this.androidUrl}`)
-    } else if (["苹果", "ios"].includes(msg)) {
-      this.e.reply(segment.image(`file://${_path}/resources/logHelp/记录帮助-苹果.png`))
-    }
   }
 
   async logCount() {

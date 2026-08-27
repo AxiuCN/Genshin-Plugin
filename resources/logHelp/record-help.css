@@ -1,0 +1,156 @@
+/* 祈愿记录统计帮助 — 米黄卡片风格（参考 miao profile-help）
+ * 字体：genshin resources/font（tttgbnumber 数字 / HYWenHei 正文 / 华文中宋 标题）
+ */
+@font-face {
+  font-family: tttgbnumber;
+  src: url("../font/tttgbnumber.ttf");
+}
+@font-face {
+  font-family: HYWenHei;
+  src: url("../font/HYWenHei-55W.ttf");
+}
+@font-face {
+  font-family: 华文中宋;
+  src: url("../font/华文中宋.TTF");
+}
+
+body {
+  transform: scale(1);
+  width: 960px;
+  margin: 0;
+  background: #f0f0f0;
+  font-family: HYWenHei, "PingFang SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.help-card {
+  width: 960px;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #f7f2e6;
+  border: 2px solid #d9c9b0;
+  border-radius: 12px;
+  padding: 32px 36px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* 四角装饰 */
+.help-card::before,
+.help-card::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-color: #c9b89c;
+  border-style: solid;
+}
+.help-card::before {
+  top: 8px;
+  left: 8px;
+  border-width: 2px 0 0 2px;
+}
+.help-card::after {
+  bottom: 8px;
+  right: 8px;
+  border-width: 0 2px 2px 0;
+}
+.help-card .corner-tl {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #c9b89c;
+  border-width: 2px 2px 0 0;
+}
+.help-card .corner-br {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #c9b89c;
+  border-width: 0 0 2px 2px;
+}
+
+/* 顶部标题框 */
+.title-box {
+  border: 2px solid #ddcbae;
+  border-radius: 999px;
+  text-align: center;
+  padding: 10px 20px;
+  margin-bottom: 28px;
+  position: relative;
+}
+.title-box::before,
+.title-box::after {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 2px;
+  background: #ddcbae;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.title-box::before {
+  left: -12px;
+}
+.title-box::after {
+  right: -12px;
+}
+.title-box h1 {
+  margin: 0;
+  font-size: 26px;
+  color: #705e46;
+  font-weight: bold;
+  font-family: 华文中宋, HYWenHei, sans-serif;
+}
+
+/* 内容区块 */
+.block {
+  margin-bottom: 22px;
+  position: relative;
+}
+.block-title {
+  font-size: 21px;
+  color: #d49028;
+  font-weight: bold;
+  margin-bottom: 6px;
+  font-family: HYWenHei, "PingFang SC", sans-serif;
+}
+.block-text {
+  font-size: 17px;
+  color: #5c4f3e;
+  line-height: 1.8;
+}
+
+/* 标注标签 */
+.block-tag {
+  display: inline-block;
+  font-size: 14px;
+  color: #fff;
+  background: #c98a3d;
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-right: 8px;
+  vertical-align: 3px;
+  font-family: HYWenHei, sans-serif;
+}
+
+/* 行内命令高亮 */
+.cmd {
+  font-family: tttgbnumber, HYWenHei, sans-serif;
+  background: #efe6d3;
+  border-radius: 4px;
+  padding: 0 6px;
+  color: #8a5a1e;
+  white-space: nowrap;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: #ddcbae;
+  margin: 16px 0;
+}
