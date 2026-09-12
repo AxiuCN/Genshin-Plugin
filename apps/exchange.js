@@ -3,6 +3,23 @@ import common from "../../../lib/common/common.js"
 import fetch from "node-fetch"
 import MysInfo from "../model/mys/mysInfo.js"
 
+/**
+ * 兑换码过期时间兜底规则（官方文案 codeTipText 缺失/解析失败时，按直播结束日推算）
+ * key = 官方米游社账号 uid
+ * 说明：优先使用官方文案，本表仅在兜底时生效；实际以官方公告为准
+ */
+const CODE_EXPIRE_FALLBACK = {
+  "75276539": { days: 3, time: "12:00:00" }, // 原神
+  "80823548": { days: 1, time: "23:59:59" }, // 星铁
+  "73565430": { days: 1, time: "23:59:59" }, // 崩三
+  "152039148": { days: 2, time: "23:59:59" }, // 绝区零
+}
+
+/** 两位补零 */
+function pad2(num) {
+  return String(num).padStart(2, "0")
+}
+
 export class exchange extends plugin {
   constructor() {
     super({
@@ -43,10 +60,8 @@ export class exchange extends plugin {
     }
     this.now = parseInt(Date.now() / 1000)
     let actid = await this.getActId()
-    let isBackupAct = false
     if (!actid) {
       actid = await this.getBackupActId()
-      isBackupAct = true
     }
     if (!actid) {
       logger.info("[兑换码] 未获取到actId")
@@ -68,17 +83,20 @@ export class exchange extends plugin {
     let index_data = index.data.live
     let title = index_data["title"]
     this.code_ver = index_data["code_ver"]
+    /** 官方模板：codeTipText 内含兑换码过期文案（如「兑换码将于9月15日12:00过期」） */
+    let template = {}
+    try {
+      template = JSON.parse(index.data.template || "{}") || {}
+    } catch (err) {
+      logger.warn(`[兑换码] template 解析失败: ${err.message}`)
+    }
     if (index_data.remain > 0) {
       return await this.reply(`暂无${title}直播兑换码`, true)
     }
 
     let code = await this.getData("code")
-    let time
-    if (isBackupAct) {
-      time = await this.getTimeStamp()
-    } else {
-      time = this.deadline
-    }
+    /** 过期时间：官方文案优先，直播结束日推算兜底 */
+    let time = this.getExpireTime(template, index_data, code)
     if (!code || !code.data?.code_list) {
       logger.info("[兑换码] 未获取到兑换码")
       return true
@@ -128,7 +146,7 @@ export class exchange extends plugin {
     return res
   }
 
-  // 获取 "act_id"
+  // 获取 "act_id"（帖子仅用于提取直播活动链接；过期时间不再以帖子发布时间推算）
   async getActId() {
     let ret = await this.getData("actId")
     if (ret.error || ret.retcode !== 0) {
@@ -140,20 +158,6 @@ export class exchange extends plugin {
       let post = p?.post?.post
       if (!post) {
         continue
-      }
-      let date = new Date(post.created_at * 1000)
-      if (this.uid == "80823548") {
-        date.setDate(date.getDate() + 1)
-        this.deadline = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} 23:59:59`
-      } else if (this.uid == "73565430") {
-        date.setDate(date.getDate() + 5)
-        this.deadline = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} 23:59:59`
-      } else if (this.uid == "152039148") {
-        date.setDate(date.getDate() + 1)
-        this.deadline = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} 23:59:59`
-      } else {
-        date.setDate(date.getDate() + 5)
-        this.deadline = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()} 12:00:00`
       }
       let structured_content = post.structured_content
       let result = structured_content.match(
@@ -187,17 +191,67 @@ export class exchange extends plugin {
     }
   }
 
-  async getTimeStamp() {
-    let code = await this.getData("code")
-    let timestamp = code.data.code_list[0].to_get_time
-    const date = new Date(timestamp * 1000)
-    const s = this.gid === "2" ? 3 : this.gid === "1" || this.gid === "6" ? 1 : 2
-    date.setDate(date.getDate() + s)
-    const y = date.getFullYear()
-    const m = (date.getMonth() + 1).toString().padStart(2, "0")
-    const d = date.getDate().toString().padStart(2, "0")
-    const t = this.gid === "2" ? "12:00:00" : "23:59:59"
-    const time = `${y}-${m}-${d} ${t}`
-    return time
+  /**
+   * 获取兑换码过期时间：官方文案优先，其次按直播结束日推算兜底
+   * @param {object} template 官方模板（codeTipText 含「兑换码将于9月15日12:00过期」）
+   * @param {object} live 直播信息（含 start/end）
+   * @param {object} code refreshCode 返回（code_list[].to_get_time 兜底）
+   * @returns {string} 过期时间 YYYY-MM-DD HH:MM:SS，无法获取时返回「未知」
+   */
+  getExpireTime(template = {}, live = {}, code = {}) {
+    // ① 官方文案（最权威：不受直播改期影响）
+    let tip = template?.codeTipText || ""
+    let m = tip.match(/将于\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日\s*(\d{1,2})\s*[:：]\s*(\d{2})/)
+    if (m) {
+      let year = this.getExpireYear(Number(m[1]), Number(m[2]), live)
+      return `${year}-${pad2(m[1])}-${pad2(m[2])} ${pad2(m[3])}:${m[4]}:00`
+    }
+    if (tip) {
+      logger.warn(`[兑换码] codeTipText 解析失败: ${tip}`)
+    }
+
+    // ② 直播结束日 + 各游戏兜底天数
+    let rule = CODE_EXPIRE_FALLBACK[this.uid]
+    let base =
+      this.parseDate(live?.end) ||
+      this.parseDate(live?.start) ||
+      this.parseDate(code?.data?.code_list?.[0]?.to_get_time)
+    if (rule && base) {
+      base.setDate(base.getDate() + rule.days)
+      return `${base.getFullYear()}-${pad2(base.getMonth() + 1)}-${pad2(base.getDate())} ${rule.time}`
+    }
+
+    logger.warn(`[兑换码] 过期时间无法获取（uid:${this.uid}）`)
+    return "未知"
+  }
+
+  /**
+   * 过期年份推断：以直播时间为基准，解析出的月日若明显早于直播则视为次年（跨年保护）
+   * @param {number} mon 文案中的月
+   * @param {number} day 文案中的日
+   * @param {object} live 直播信息
+   * @returns {number} 年份
+   */
+  getExpireYear(mon, day, live = {}) {
+    let base = this.parseDate(live?.end) || this.parseDate(live?.start) || new Date()
+    let year = base.getFullYear()
+    // 早于直播 30 天以上 → 判定为次年（如 12 月直播、文案写 1 月）
+    if (new Date(year, mon - 1, day).getTime() < base.getTime() - 30 * 24 * 3600 * 1000) {
+      year += 1
+    }
+    return year
+  }
+
+  /**
+   * 解析日期：支持「2026-09-12 21:16:10」与秒级时间戳
+   * @param {string|number} val
+   * @returns {Date|null}
+   */
+  parseDate(val) {
+    if (!val) return null
+    let date = /^\d{9,10}$/.test(String(val))
+      ? new Date(Number(val) * 1000)
+      : new Date(String(val).replace(/-/g, "/"))
+    return isNaN(date.getTime()) ? null : date
   }
 }
