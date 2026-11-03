@@ -4,7 +4,7 @@
 
 ## 简介
 
-本插件为 TRSS-Yunzai v3 提供原神相关功能，包括米游社数据查询、抽卡记录、Cookie 管理、兑换码使用等。通过子树（subtree）方式从主仓库中提取，保留完整提交历史，方便独立跟进。
+本插件为 TRSS-Yunzai v3 提供原神/星铁/绝区零相关功能，包括米游社数据查询、抽卡记录、Cookie 管理、兑换码使用等。早期以子树（subtree）方式从主仓库中提取，现为独立仓库单独维护（与官方无公共提交历史）。
 
 ## 安装
 
@@ -18,7 +18,7 @@ git clone --depth=1 https://github.com/AxiuCN/Genshin-Plugin.git ./plugins/gensh
 
 ## 同步上游更新
 
-本插件是 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) `plugins/genshin` 的自有 fork（含自定义改动）。上游更新通过仓库目录内 `CLAUDE.md`「同步上游」所述的中转仓库三方合并同步：先 merge 吸收本仓库提交、再 merge 官方增量、最后 `git subtree push` 推送。普通使用无需关注。
+本插件是 [Miao-Yunzai](https://github.com/yoimiya-kokomi/Miao-Yunzai) `plugins/genshin` 的自有 fork（含自定义改动），现为独立仓库维护，与官方**提交历史无共同祖先**，因此不做 merge / `git subtree` 全量同步，而是按官方提交批次人工挑选增量（`git fetch miao` 后逐文件采用）。细节见仓库内 [`docs/上游同步.md`](./docs/上游同步.md)。普通使用无需关注。
 
 ## 功能
 
@@ -75,7 +75,7 @@ CK 失效时插件自动处理，无需手动操作：
 | 触发条件 | 米游社 API 返回 10001（Cookie 过期）时自动刷新并重试原请求 |
 | 刷新方式 | 使用扫码登录绑定的 stoken 换取新 cookie_token，重新绑定后重试 |
 | stoken 来源 | 通过 `#扫码登录` 绑定（Axiu-Plugin），数据目录可在 `config/mys.set.yaml` 的 `stokenPath` 修改 |
-| 通知 | 刷新成功 / 失败时通知绑定者（私聊，群内查询时优先群内@） |
+| 通知 | 刷新成功 / 失败均通知绑定者：群内触发时群内 @；成功可在无群上下文时私聊兜底，**失败不私聊**（防风控） |
 
 ### 抽卡记录
 
