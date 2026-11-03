@@ -3,6 +3,7 @@ import gsCfg from "./gsCfg.js"
 import lodash from "lodash"
 import moment from "moment"
 import fetch from "node-fetch"
+import PoolData from "./poolData.js"
 import { Character, Weapon } from "#miao.models"
 
 export default class GachaData extends base {
@@ -85,11 +86,15 @@ export default class GachaData extends base {
 
   /** 奖池数据 */
   async getPool() {
-    let poolArr = gsCfg.getdefSet("gacha", "pool")
-    poolArr = [...poolArr].reverse()
-    /** 获取设置卡池 */
-    let NowPool =
-      poolArr.find(val => new Date().getTime() <= new Date(val.endTime).getTime()) || poolArr.pop()
+    /** 原神限定池取自 miao-plugin（权威源），miao 数据缺失时回退 defSet */
+    let NowPool = PoolData.getNowPool()
+    if (!NowPool) {
+      let poolArr = gsCfg.getdefSet("gacha", "pool")
+      poolArr = [...poolArr].reverse()
+      /** 获取设置卡池 */
+      NowPool =
+        poolArr.find(val => new Date().getTime() <= new Date(val.endTime).getTime()) || poolArr.pop()
+    }
     this.NowPool = NowPool
 
     if (this.type == "weapon") {
@@ -110,7 +115,7 @@ export default class GachaData extends base {
       let role5 = lodash.difference(this.def.role5, NowPool.up5)
 
       let up5 = NowPool.up5
-      if (this.role2) up5 = NowPool.up5_2
+      if (this.role2 && NowPool.up5_2?.length) up5 = NowPool.up5_2
 
       this.pool = {
         /** up卡池 */

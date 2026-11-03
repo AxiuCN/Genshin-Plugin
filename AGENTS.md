@@ -79,9 +79,11 @@ Genshin-Plugin — TRSS-Yunzai v3 框架级插件，覆盖原神 / 星铁 / 绝�
 8. **`stokenPath` 是跨插件外挂依赖** — 默认指向 Axiu-Plugin 的 stoken 目录；改路径要同时改 `defSet/mys/set.yaml` 与文档
 9. **`checkCode` 的 `ckUser` 可能为 `null`** — 公共 CK 空 ck 场景；新增逻辑必须守卫
 10. **兑换码过期时间以官方文案为准** — 解析 `miyolive index` 的 `template.codeTipText`；**不要**退回「预告帖发布时间 + 固定天数」推算（避讳延播必算错）
+11. **卡池时间以 miao-plugin 为准** — 原神角色限定池（301）/武器池（302）的卡池时间取自 miao-plugin `resources/meta-gs/info/pool.js`，经 `model/poolData.js` 适配；**不要**手工补 `defSet/pool/301|302.yaml`（仅作回退）。星铁 11/12、集录 500 仍读 YAML
 
 ## 待办（摘要）
 
 - **兑换码过期时间待验证** — 星铁 / 崩三 / 绝区零的 `template.codeTipText` 与兜底天数需在某期前瞻活动窗口实测；崩三 / 绝区零的 `act_id` 获取路径疑似失效
 - **双归属修复观察** — `f8cc0bc` 上线后观察一段时间，日志出现「防双归属」`warn` 即为复发信号
+- **卡池数据** — 原神 301/302 已改由 miao-plugin 提供；星铁 11/12 停更（已确认不重要）、集录 500 仍是 YAML、上游 luck 图资源缺失
 - 详见 [`docs/待办与规划.md`](docs/待办与规划.md)

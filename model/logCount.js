@@ -4,6 +4,7 @@ import fs from "node:fs"
 import gsCfg from "./gsCfg.js"
 import moment from "moment"
 import GachaLog from "./gachaLog.js"
+import PoolData from "./poolData.js"
 
 export default class LogCount extends base {
   constructor(e) {
@@ -214,7 +215,8 @@ export default class LogCount extends base {
   }
 
   getPoolCfg() {
-    let poolCfg = gsCfg.getdefSet("pool", this.type)
+    /** 原神限定池取自 miao-plugin（权威源），其余类型回退 defSet/pool */
+    let poolCfg = PoolData.getPoolCfg(this.type)
 
     poolCfg.forEach(v => {
       v.start = moment(v.from, "YYYY-MM-DD HH:mm:ss").format("X")
